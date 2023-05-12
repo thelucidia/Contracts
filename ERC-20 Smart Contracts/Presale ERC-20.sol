@@ -102,7 +102,6 @@ contract Presale is Ownable {
     mapping (address => uint256) public userEthDepositAmount;
 
     address[] public depositers;
-    address public depositAddress;
 
     uint256 public presaleStartTime;
     uint256 public presaleEndTime;
@@ -133,7 +132,7 @@ contract Presale is Ownable {
         require(block.timestamp >= presaleStartTime && block.timestamp <= presaleEndTime, "Presale is not active");
         
         require(isValidToken[_token], "Invalid token");
-        require(IERC20(_token).transferFrom(msg.sender, depositAddress, _amount), "Transfer failed");
+        require(IERC20(_token).transferFrom(msg.sender, address(this), _amount), "Transfer failed");
         require(userTokenDepositAmount[msg.sender][_token] + _amount <= tokenDetails[_token].depositLimit, "Deposit limit exceeded");
 
         if (tokenClaimable[msg.sender] == 0) depositers.push(msg.sender);
@@ -157,7 +156,7 @@ contract Presale is Ownable {
         userEthDepositAmount[msg.sender] += msg.value;
         tokenClaimable[msg.sender] += (msg.value * ethDepositPrice) / (10 ** 18);
 
-        (bool success, ) = payable(depositAddress).call{value: msg.value}("");
+        (bool success, ) = payable(address(this)).call{value: msg.value}("");
         success;
     }
 
@@ -228,11 +227,6 @@ contract Presale is Ownable {
         }
     }
 
-    // set deposit address
-    function setDepositAddress (address _depositAddress) public onlyOwner {
-        depositAddress = _depositAddress;
-    }
-
     // set eth deposit limit
     function setEthDepositLimit (uint256 _limit) public onlyOwner {
         ethDepositLimit = _limit;
@@ -241,6 +235,23 @@ contract Presale is Ownable {
     // set eth deposit price
     function setEthDepositPrice (uint256 _price) public onlyOwner {
         ethDepositPrice = _price;
+    }
+
+    // this function is to withdraw BNB
+    function withdrawEth () external onlyOwner returns (bool) {
+        uint256 balance = address(this).balance;
+        (bool success, ) = payable(msg.sender).call{
+            value: balance
+        }("");
+        return success;
+    }
+
+    // this function is to withdraw tokens
+    function withdrawBEP20 (address _tokenAddress) external onlyOwner returns (bool) {
+        IERC20 token = IERC20 (_tokenAddress);
+        uint256 balance = token.balanceOf(address(this));
+        bool success = token.transfer(msg.sender, balance);
+        return success;
     }
 
 }
