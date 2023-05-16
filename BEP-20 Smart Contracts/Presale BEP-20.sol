@@ -7,10 +7,6 @@ abstract contract Context {
         return payable(msg.sender);
     }
 
-    function _msgData() internal view virtual returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
 }
 
 
@@ -121,7 +117,10 @@ contract Presale is Ownable {
         lock_ = false;
     }
 
-
+    event SetEthDepositPrice (uint256 _price);
+    event SetPresaleStartTime (uint256 _startTime);
+    event SetPresaleEndTime (uint256 _endTime);
+    event SetEthDepositLimit (uint256 _limit);
 
 
     // deposit token using this function
@@ -180,11 +179,13 @@ contract Presale is Ownable {
     // set presale start time
     function setPresaleStartTime (uint256 _startTime) public onlyOwner {
         presaleStartTime = _startTime;
+        emit SetPresaleStartTime(_startTime);
     }
 
     // set presale end time
     function setPresaleEndTime (uint256 _endTime) public onlyOwner {
         presaleEndTime = _endTime;
+        emit SetPresaleEndTime(_endTime);
     }
 
     // set presale status
@@ -209,14 +210,14 @@ contract Presale is Ownable {
     }
 
     // blacklist user
-    function blacklistUser (address _user) public onlyOwner {
-        isBlacklisted[_user] = true;
+    function blacklistUser (address _user, bool _flag) public onlyOwner {
+        isBlacklisted[_user] = _flag;
     }
 
     // whitelist users
-    function whitelistUsers (address[] memory _users) public onlyOwner {
+    function whitelistUsers (address[] memory _users, bool _flag) public onlyOwner {
         for (uint256 i = 0; i < _users.length; i++) {
-            isWhitelisted[_users[i]] = true;
+            isWhitelisted[_users[i]] = _flag;
         }
     }
 
@@ -230,11 +231,13 @@ contract Presale is Ownable {
     // set eth deposit limit
     function setEthDepositLimit (uint256 _limit) public onlyOwner {
         ethDepositLimit = _limit;
+        emit SetEthDepositLimit(_limit);
     }
 
     // set eth deposit price
     function setEthDepositPrice (uint256 _price) public onlyOwner {
         ethDepositPrice = _price;
+        emit SetEthDepositPrice(_price);
     }
 
     // this function is to withdraw BNB
